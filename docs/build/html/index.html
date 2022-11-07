@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to TSload’s documentation! &mdash; TSload 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/graphviz.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="#" class="icon icon-home"> TSload
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">TSload</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+      <li>Welcome to TSload’s documentation!</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="welcome-to-tsload-s-documentation">
+<h1>Welcome to TSload’s documentation!<a class="headerlink" href="#welcome-to-tsload-s-documentation" title="Permalink to this headline"></a></h1>
+<section id="contents">
+<h2>Contents<a class="headerlink" href="#contents" title="Permalink to this headline"></a></h2>
+<div class="toctree-wrapper compound">
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Home</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-TSload.TSloader">TSload.TSloader Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-TSload.DataFormat">TSload.DataFormat Module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h1>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python -m pip install -e .
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h1>
+<p>Use exactly one loader per datatype.</p>
+<section id="simple-example">
+<h2>Simple example<a class="headerlink" href="#simple-example" title="Permalink to this headline"></a></h2>
+<p>notebook/example_add.org</p>
+</section>
+<section id="add-datatype">
+<h2>add_datatype<a class="headerlink" href="#add-datatype" title="Permalink to this headline"></a></h2>
+<p>test</p>
+</section>
+<section id="add-id">
+<h2>add_ID<a class="headerlink" href="#add-id" title="Permalink to this headline"></a></h2>
+<p>test</p>
+</section>
+<section id="add-feature">
+<h2>add_feature<a class="headerlink" href="#add-feature" title="Permalink to this headline"></a></h2>
+<p>test</p>
+</section>
+<section id="performance-choices">
+<h2>Performance choices<a class="headerlink" href="#performance-choices" title="Permalink to this headline"></a></h2>
+<ol class="arabic simple">
+<li><p>It is recommended to add timeseries with the method <code class="docutils literal notranslate"><span class="pre">add_ID</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">add_feature</span></code> is not a performing method</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">autowrite=False</span></code>, by default. It means, it does</p></li>
+</ol>
+<p>not write to file automatically after operations. Don’t forget to
+<code class="docutils literal notranslate"><span class="pre">write()</span></code> when finish to save to file.</p>
+</section>
+<section id="more-examples">
+<h2>More examples<a class="headerlink" href="#more-examples" title="Permalink to this headline"></a></h2>
+<p>See the notebooks</p>
+</section>
+<section id="how-the-data-is-stored">
+<h2>How the data is stored<a class="headerlink" href="#how-the-data-is-stored" title="Permalink to this headline"></a></h2>
+<p>The collection of all the data is called the dataset.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">datatype</span></code> refers type of the data which informs about the
+structure of the data. A given <code class="docutils literal notranslate"><span class="pre">datatype</span></code> as the exact same
+<code class="docutils literal notranslate"><span class="pre">datafeature</span></code> which is the name their features (observations).
+<code class="docutils literal notranslate"><span class="pre">Datatype</span></code> is a collection of multiple categories of input from
+different <code class="docutils literal notranslate"><span class="pre">ID</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">datatype</span> <span class="o">=</span> <span class="s2">&quot;simulated_returns&quot;</span>
+<span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ARMA1&quot;</span><span class="p">,</span> <span class="s2">&quot;ARMA2&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomForest&quot;</span><span class="p">]</span>
+<span class="n">datafeatures</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="the-splits">
+<h2>The splits<a class="headerlink" href="#the-splits" title="Permalink to this headline"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">datatype</span> <span class="o">=</span> <span class="s2">&quot;TSX&quot;</span>
+<span class="n">split</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;20160104&quot;</span><span class="p">,</span> <span class="s2">&quot;20160105&quot;</span><span class="p">]</span>
+<span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ABX&quot;</span><span class="p">,</span> <span class="s2">&quot;BMO&quot;</span><span class="p">,</span> <span class="s2">&quot;HXT&quot;</span><span class="p">]</span>
+<span class="n">features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Note that the data is separated on two files (days) because of the
+quantity of data. Otherwise only one file would be needed</p>
+<p>Split_names is an array of names Split_index is the current index to
+load in split_names</p>
+</section>
+<section id="the-dataframes">
+<h2>The DataFrames<a class="headerlink" href="#the-dataframes" title="Permalink to this headline"></a></h2>
+<section id="data">
+<h3>Data<a class="headerlink" href="#data" title="Permalink to this headline"></a></h3>
+</section>
+</section>
+<section id="the-dataframes-1">
+<span id="id1"></span><h2>The DataFrames<a class="headerlink" href="#the-dataframes-1" title="Permalink to this headline"></a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">pandas</span></code> term, <code class="docutils literal notranslate"><span class="pre">ID</span></code> is the column with the same name and
+<code class="docutils literal notranslate"><span class="pre">datafeature</span></code> is the name of the rest of the columns. The <code class="docutils literal notranslate"><span class="pre">datatype</span></code>
+is store in a sequence of <code class="docutils literal notranslate"><span class="pre">filenames</span></code>.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 44%" />
+<col style="width: 44%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>ID</p></td>
+<td><p>feature1</p></td>
+<td><p>feature2</p></td>
+</tr>
+<tr class="row-even"><td><p></p></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p><code class="docutils literal notranslate"><span class="pre">datafeature</span></code> = []</p>
+<p>Data is index using (ID, timestamp)</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 2%" />
+<col style="width: 25%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p>feature n: any</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>ID: str</p></td>
+<td><p>timestamp: str</p></td>
+<td><p>feature 1: any</p></td>
+<td><p>…</p></td>
+<td><p>feature n: any</p></td>
+</tr>
+</tbody>
+</table>
+<section id="metadata">
+<h3>Metadata<a class="headerlink" href="#metadata" title="Permalink to this headline"></a></h3>
+<p>It is important to have full control over metadata. Metadata is not
+affected by the attribute overwrite.</p>
+<p>Metadata index using datatype</p>
+<p>List elements in metadata are unique. The use of a set was consider but
+was restrictive whenever a user would want to loop over some metadata in
+a predetermined way.</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>datatype:
+str</p></th>
+<th class="head"><p>split:
+list[str]</p></th>
+<th class="head"><p>IDs:
+list[str]</p></th>
+<th class="head"><p>features:
+list[str]</p></th>
+<th class="head"><p>arbitrar
+y_metadata:
+any</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Arbitrary metadata example:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18%" />
+<col style="width: 32%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>start</p></th>
+<th class="head"><p>frequency</p></th>
+<th class="head"><p>nb_observation</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+</section>
+<section id="parallel-execution">
+<h1>Parallel execution<a class="headerlink" href="#parallel-execution" title="Permalink to this headline"></a></h1>
+<p>Parallel attribute must be set to True if the loader is intended to be
+used in parallel. The metadata output will therefore be base on loader
+datatype and split. To generate the <code class="docutils literal notranslate"><span class="pre">metadata.pqt</span></code>, the method
+<code class="docutils literal notranslate"><span class="pre">merge_metadata</span></code> must be used after all the parallel processes are
+completed.</p>
+</section>
+<section id="old">
+<h1>Old<a class="headerlink" href="#old" title="Permalink to this headline"></a></h1>
+<section id="the-idea">
+<h2>The idea<a class="headerlink" href="#the-idea" title="Permalink to this headline"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">datatype</span></code> refers type of the data which informs about the
+structure of the data. A given <code class="docutils literal notranslate"><span class="pre">datatype</span></code> as the exact same
+<code class="docutils literal notranslate"><span class="pre">feature</span></code> which is the name their features (observations).
+<code class="docutils literal notranslate"><span class="pre">Datatype</span></code> is a collection of multiple categories of input from
+different <code class="docutils literal notranslate"><span class="pre">ID</span></code>.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">pandas</span></code> term, <code class="docutils literal notranslate"><span class="pre">ID</span></code> is the column with the same name and
+<code class="docutils literal notranslate"><span class="pre">feature</span></code> is the name of the rest of the columns. The <code class="docutils literal notranslate"><span class="pre">datatype</span></code> is
+store in a sequence of <code class="docutils literal notranslate"><span class="pre">split</span></code>.</p>
+<p>First example,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">datatype</span> <span class="o">=</span> <span class="s2">&quot;simulated&quot;</span>
+<span class="n">split</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>
+<span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ARMA1&quot;</span><span class="p">,</span> <span class="s2">&quot;ARMA2&quot;</span><span class="p">,</span> <span class="s2">&quot;RandomForest&quot;</span><span class="p">]</span>
+<span class="n">feature</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Second example,</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">datatype</span> <span class="o">=</span> <span class="s2">&quot;TSX&quot;</span>
+<span class="n">split</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;20160104&quot;</span><span class="p">,</span> <span class="s2">&quot;20160105&quot;</span><span class="p">]</span>
+<span class="n">ID</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ABX&quot;</span><span class="p">,</span> <span class="s2">&quot;BMO&quot;</span><span class="p">,</span> <span class="s2">&quot;HXT&quot;</span><span class="p">]</span>
+<span class="n">feature</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;open&quot;</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Note that the data is separated on two files (days) because of the
+quantity of data. Otherwise only one file would be needed</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Francis Huot-Chantal.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
