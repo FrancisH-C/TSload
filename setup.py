@@ -17,6 +17,8 @@ except FileNotFoundError:
 install_requires = ['pandas',
                     'pyarrow',
                     'sphinx',
+                    'nbsphinx',
+                    'sphinx-automodapi',
                     'furo']
 extras_require = {}
 

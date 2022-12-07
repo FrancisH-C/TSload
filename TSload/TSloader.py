@@ -8,7 +8,7 @@ import logging
 
 
 class TSloader:
-    """Use to write, load and modify timeseries dataset.
+    """Use to write, load and modify a timeseries dataset.
 
     A TSloader is assigned a path to a "dataset". Optionally, it can have a
     "datatype" which informs about the structure of the data. "Datatype" is a
@@ -25,35 +25,20 @@ class TSloader:
         Most of the attributes are better changed using their 'set' method or by
         pdefining a new loader.
 
-    Performance :
-        It presupposes categories and 'number of features << number of feature
-        entry'.
-
     Args:
-        path (str, optional): The path to the dataset. datatype (str): The type
-            of data which inform about the structure of the data. It is used as
-            part of the file name in the dataset.
-        datatype (str, optional): The type of data which inform about the
-            structure of the data. It is used as part of the file name in the
-            dataset.
-        split (list[int] , optional): The sequence of splits to store on disk.
+        path (str): Sets attribute of the same name.
+        datatype (str): Sets attribute of the same name.
+        split (list[str], optional): Sets attribute of the same name.
         subsplit_indices (list[int] , optional): The indices to use in subsplit.
             Default is to use all the indices from the split.
         subsplit_names (list[str] , optional): The subsplit scheme to use.
             Default is to use the whole split.
-        parallel (bool, optional): Parallel informn on how to manipulate
-            metadata. Parallel must be set to True to use in parallel to be used
-            in parallel.
-        permission (bool, optional): To choose between {'read', 'write',
-            'overwerite'}, with an incresing level of permission for the loader.
-            With 'write', you can only add data. Any operation that would remove
-            data or metadata will raise an error. With 'read' you can read the
-            data but not change it. With 'overwrite' you can do all operations.
-            Default is 'write'
+        parallel (bool, optional): Sets attribute of the same name.
+        permission (str, optional): Sets attribute of the same name.
 
     Attributes:
         path (str): The path to the dataset.
-        datatype (str, optional): The type of data which inform about the
+        datatype (str): The type of data which inform about the
             structure of the data. It is used as part of the file name in the
             dataset.
         df (pd.DataFrame): The pandas' dataset.
@@ -64,14 +49,16 @@ class TSloader:
         parallel (bool): Parallel informn on how to manipulate metadata.
             Parallel must be set to True to use in parallel to be used in
             parallel. Default is False.
-        permission (str): Default to 'write'. The options are :
+        permission (str): To choose between {'read', 'write', 'overwerite'},
+            with an increasing level of permission for the loader. The options are :
 
-            - 'read' you can read the data but not change it.
-            - 'write', you can only add data. Any operation that would remove data or
-                metadata will raise an error.
-            - 'overwrite' you can do all operations.
+            - 'read' : Read only the data on disk and change it on memory.
+            - 'write' : Add only new datatype and new ID. Any operation that \
+               would remove or change data or metadata will raise an error.
+            - 'overwrite' (default) :  Do all operations and write on disk.
 
     """
+
     def __init__(
         self,
         path: str = "data",
@@ -80,8 +67,9 @@ class TSloader:
         subsplit_indices: list[int] = None,
         subsplit_names: list[str] = None,
         parallel: bool = False,
-        permission: str = "write",
+        permission: str = "overwrite",
     ) -> "TSloader":
+        """Init method."""
         # Permissions
         self.set_permission(permission)  # read, write, write
 
@@ -108,15 +96,15 @@ class TSloader:
 
         """
         self.path = path
-        self.create_path()
+        self._create_path()
 
-    def create_path(self) -> None:
+    def _create_path(self) -> None:
         """Create the path if it doesn't exsist."""
         if not os.path.isdir(self.path):
             logging.info(f"Path '{self.path}' does not exist, creating.")
             os.makedirs(self.path)
 
-    def append_path(self, filename: str) -> str:
+    def _append_path(self, filename: str) -> str:
         """Give the filename appended with the path attribute.
 
         Args:
@@ -132,7 +120,14 @@ class TSloader:
         """Set the current path.
 
         Args:
-            path (str):
+            permission (str, optional): To choose between {'read', 'write',
+                'overwerite'}, with an increasing level of permission for the loader.
+                The options are :
+
+                - 'read' : Read only the data on disk and change it on memory.
+                - 'write' : Add only new datatype and new ID. Any operation that \
+                   would remove or change data or metadata will raise an error.
+                - 'overwrite' (default) :  Do all operations and write on disk.
 
         """
         if permission not in ["read", "write", "overwrite"]:
@@ -140,23 +135,28 @@ class TSloader:
 
         self.permission = permission
 
-    def rm_dataset(self) -> None:
+    def rm_dataset(self, ignore_errors=True) -> None:
         """Remove dataset. Dangerous method.
+
+        Args:
+            ignore_errors (str, optional): If ignore_errors is set to True, errors
+                    arising due to unsuccessful file removals will be ignored. This
+                    is set to `True` by default
 
         Raises:
             ValueError: If permission is not overwerite.
 
         """
         if self.permission != "overwrite":
-            raise ValueError("To remove the dataset, you need the overwrite permission")
+            raise ValueError("To remove the dataset, you need 'overwrite' permission")
 
-        shutil.rmtree(self.path)
+        shutil.rmtree(self.path, ignore_errors=ignore_errors)
 
     def move_dataset(self, new_path: str) -> None:
         """Move dataset to another location.
 
         Args:
-            new_path (str):
+            new_path (str): The path where to move the data.
 
         Raises:
             ValueError: If permission is not ovwerwrite or `self.path` is
@@ -167,7 +167,7 @@ class TSloader:
         old_path = self.path
 
         if self.permission != "overwrite":
-            raise ValueError("To move the dataset, you need the overwrite permission")
+            raise ValueError("To move the dataset, you need 'overwrite' permission")
         elif old_path == new_path:
             raise ValueError(f"'{new_path}' is already the current dataset path.")
         try:
@@ -183,13 +183,16 @@ class TSloader:
         """Copy dataset to another location.
 
         Args:
-            new_path (str):
+            new_path (str): The path where to copy the data.
 
         Raises:
             ValueError: If `self.path` is equal to `new_path`.
             OSError: If `new_path` directory exsists.
 
         """
+        if self.permission == "read":
+            raise ValueError("To copy the dataset, you need 'write' permission")
+
         old_path = self.path
 
         if old_path == new_path:
@@ -203,49 +206,9 @@ class TSloader:
                 + "to merge dataset use `merge_dataset`."
             )
 
-    @staticmethod
-    def merge_dataset(loaders, merge_path: str, **merge_loader_args: any) -> "TSloader":
-        """Merge dataset.
-
-        The merge path needs to be distinct from the path of all loaders.
-
-        Args:
-            loaders
-            merge_path (str):
-            **merge_loader_args (any):
-
-        Returns:
-            "TSloader": TSloader instance with the pandas' metadata attribute merged.
-
-        Raises:
-            ValueError: If `merge_path` is one of `loaders` path.
-
-        """
-        if type(loaders) is not list:
-            loaders = [loaders]
-
-        merge_loader = TSloader(merge_path, **merge_loader_args)
-
-        i = 0
-        for loader in loaders:
-            if loader.path == merge_path:
-                raise ValueError(
-                    "The merge path needs to be distinct "
-                    + "from the path of all loaders."
-                )
-            for filename in os.listdir(loader.path):
-                if filename == "metadata.pqt":
-                    src = os.path.join(loader.path, filename)
-                    dst = os.path.join(merge_path, "metadata-" + str(i) + ".pqt")
-                    shutil.copyfile(src, dst)
-                    i += 1
-                else:
-                    src = os.path.join(loader.path, filename)
-                    dst = os.path.join(merge_path, filename)
-                    shutil.copyfile(src, dst)
-
-        merge_loader.merge_metadata(write=True, rm=True)
-        return merge_loader
+    #######################
+    # metadata operations #
+    #######################
 
     def toggle_parallel(self) -> None:
         """Toggle parallel option."""
@@ -263,7 +226,7 @@ class TSloader:
             pd.DataFrame: The pandas' metadata.
 
         """
-        metadata_file = self.append_path("metadata.pqt")
+        metadata_file = self._append_path("metadata.pqt")
         if os.path.isfile(metadata_file):
             self.metadata = pd.read_parquet(metadata_file)
         else:
@@ -279,14 +242,14 @@ class TSloader:
 
         """
         if self.permission == "read":
-            raise ValueError("This loader is read-only.")
+            raise ValueError("This loader has only 'read' permission.")
         if self.parallel:
             metadata_file = self.get_filename("metadata-")
         else:
-            metadata_file = self.append_path("metadata.pqt")
+            metadata_file = self._append_path("metadata.pqt")
         self.metadata.to_parquet(metadata_file)
 
-    def add_datatype_to_metadata(self) -> None:
+    def _add_datatype_to_metadata(self) -> None:
         """Add the current datatype to the metadata indices."""
         if self.metadata.empty:
             self.metadata = pd.DataFrame({"datatype": [self.datatype]})
@@ -323,10 +286,12 @@ class TSloader:
 
         """
         if self.permission != "overwrite":
-            raise ValueError("This method needs the overwrite permission.")
+            raise ValueError("This method needs 'overwrite' permission.")
         for key in metadata:
             if key not in self.metadata.columns:
                 self.metadata[key] = ""
+            if type(metadata[key]) is not list:
+                metadata[key] = [metadata[key]]
             self.metadata.at[self.datatype, key] = metadata[key]
 
     def _initialize_split_metadata(self, split: list[str] = None) -> None:
@@ -346,7 +311,7 @@ class TSloader:
             if self.permission == "overwrite":
                 self.split = split
                 # overwrite the split to metadata
-                self.overwrite_metadata(split=list(set(self.split)))
+                self.overwrite_metadata(split=list(self.split))
             else:
                 raise ValueError(
                     "A split already exsists. "
@@ -357,10 +322,7 @@ class TSloader:
             self.add_metadata(split=split)
 
     def merge_metadata(self, write: bool = True, rm: bool = True) -> None:
-        """Merge metadata without shared datatype between 'metadata-' file.
-
-        A preprocess work must be done if datatype are shared to then
-        use this method.
+        """Merge metadata between 'metadata-' file.
 
         Args:
             write (bool, optional): Whether or not to write the merged metadata.
@@ -382,23 +344,24 @@ class TSloader:
         elif self.permission != "overwrite" and rm:
             raise ValueError(
                 "You cannot remove metadata while merging "
-                + "without overwrite permission."
-            )
-        elif self.parallel:
-            raise ValueError(
-                "Set the parallel execution attribute " + "to `False` before merging."
+                + "without 'overwrite' permission."
             )
 
         elif not self.metadata.empty and self.permission != "overwrite":
             raise ValueError(
                 "Trying to merge metadata but it already exists. "
-                + "To force it, change the overwrite permission."
+                + "To force it, change permission to 'overwrite'."
+            )
+
+        if self.parallel:
+            raise ValueError(
+                "Set the parallel execution attribute " + "to `False` before merging."
             )
 
         self.metadata = pd.DataFrame()
         for filename in os.listdir(self.path):
             if filename[0:9] == "metadata-":
-                metadata_file = self.append_path(filename)
+                metadata_file = self._append_path(filename)
                 new_metadata = pd.read_parquet(metadata_file)
                 for datatype in new_metadata.index:
                     self.datatype = datatype
@@ -406,7 +369,7 @@ class TSloader:
                     IDs = new_metadata["IDs"][0]
                     split = new_metadata["split"][0]
 
-                    self.add_datatype_to_metadata()
+                    self._add_datatype_to_metadata()
                     self.add_metadata(split=split, IDs=IDs, features=features)
 
                 # remove metadata-* file
@@ -435,16 +398,22 @@ class TSloader:
             subsplit_indices (list[int], optional): The split indices to set.
             subsplit_names (list[str], optional): The split names to set.
 
+        Raises:
+            ValueError: If `datatype` is undefined.
+
         """
+        if datatype is None:
+            raise ValueError("You need to define a datatype")
+
         self.datatype = datatype
-        self.add_datatype_to_metadata()
+        self._add_datatype_to_metadata()
 
         # Initialize and set the split
         self._initialize_split_metadata(split)
-        self.set_split(subsplit_indices, subsplit_names)
+        self._set_split(subsplit_indices, subsplit_names)
         self.split_index = 0  # start at the beginning
 
-    def set_split(
+    def _set_split(
         self, subsplit_indices: list[int] = None, subsplit_names: list[str] = None
     ) -> None:
         """Set split.
@@ -511,7 +480,7 @@ class TSloader:
             )
         else:
             filename = prefix + self.datatype + ".pqt"
-        return self.append_path(filename)
+        return self._append_path(filename)
 
     def load(self) -> pd.DataFrame:
         """Load datatatype's data.
@@ -520,10 +489,11 @@ class TSloader:
             pd.DataFrame: The pandas' data.
 
         """
-        if self.datatype is None or not os.path.isfile(self.get_filename()):
+        filename = self.get_filename()
+        if self.datatype is None or not os.path.isfile(filename):
             self.df = pd.DataFrame()
         else:
-            self.df = pd.read_parquet(self.get_filename())
+            self.df = pd.read_parquet(filename)
         return self.df
 
     def write(self) -> None:
@@ -535,7 +505,7 @@ class TSloader:
 
         """
         if self.permission == "read":
-            raise ValueError("This loader permission is read-only.")
+            raise ValueError("This loader has only 'read' permission.")
         elif self.datatype is None:
             raise ValueError("No defined datatype.")
 
@@ -557,7 +527,7 @@ class TSloader:
             raise ValueError("Need a well-defined DataFrame.")
         elif len(self.df) > 0 and self.permission != "overwrite":
             raise ValueError(
-                "To initialize a non-empty datatype, you need the overwrite permission."
+                "To initialize a non-empty datatype, you need 'overwrite' permission."
             )
 
         self.df = df.set_index(["ID", "timestamp"])
@@ -578,8 +548,8 @@ class TSloader:
 
         """
         if self.permission != "overwrite":
-            raise ValueError("To remove a datatype, you need the overwrite permission")
-        elif self.df.empty():
+            raise ValueError("To remove a datatype, you need 'overwrite' permission")
+        elif self.df.empty:
             raise ValueError("Trying to remove not existing datatype.")
         self.df = pd.DataFrame()
 
@@ -591,15 +561,21 @@ class TSloader:
     #######################
 
     def add_ID(
-        self, df: pd.DataFrame = None, ID: str = None, append: bool = True
+        self, df: pd.DataFrame = None, ID: str = None, collision: str = "overwrite"
     ) -> None:
         """Add ID to datatype.
 
         Args:
             df (pd.DataFrame): A dataframe with data for a given `ID`.
             ID (str): The unique identication name for the data.
-            append (bool, optional): Whether or not to append the `df` to an
-                existing ID in `self.df`. Default is `True`
+            collision (str, optional): To choose between {'ignore', 'append',
+                'update', 'overwerite'}
+
+                - 'overwrite' (default) : Overwrite the value.
+                - 'update' : Updates the value.
+                - 'append' : Append without index verification df
+                   (could lead to multiple index problem).
+                - 'ignore' : Does nothing.
 
         Raises:
             ValueError: If `ID` or `df` are not well-defined or if trying to
@@ -610,30 +586,50 @@ class TSloader:
             raise ValueError("Need a well-defined DataFrame.")
         elif ID is None:
             raise ValueError("Need an ID.")
+        if collision == "ignore":
+            return
 
         if ID in self.df.index:
-            if self.permission == "overwrite":
-                self.rm_ID(
-                    ID, rm_from_metadata=False
-                )  # Metadata needs to be kept the same
-                # self.df.drop(ID, level=0, inplace=True)
-            elif not append:
-                raise ValueError(
-                    f"{ID} already in DataFrame. "
-                    + "Append to it by using the paramater of the method, "
-                    + "or overwrite it by changing the permission."
-                )
+            if collision == "ignore":
+                return
+            elif collision == "append":
+                # append all the info for the ID
+                df = pd.concat([self.df.loc[ID].reset_index(), df], axis=0)
 
-        df["ID"] = ID
-        df.set_index(["ID", "timestamp"], inplace=True)
-        self.df = pd.concat([self.df, df], axis=0)
+                df["ID"] = ID
+                df.set_index(["ID", "timestamp"], inplace=True)
 
-        self.add_metadata(IDs=ID, features=self.df.columns)  # add to metadata
+                # remove previous now duplicated data
+                self.df.drop(index=ID, level="ID", inplace=True)
+                self.df = pd.concat([self.df, df], axis=0)
+
+            elif collision == 'update' and self.permission == "overwrite":
+                df["ID"] = ID
+                df.set_index(["ID", "timestamp"], inplace=True)
+
+                self.df = df.combine_first(self.df)
+            elif collision == 'overwrite' and self.permission == "overwrite":
+                self.rm_ID(ID, rm_from_metadata=False)  # Keep metadata
+                df["ID"] = ID
+                df.set_index(["ID", "timestamp"], inplace=True)
+                self.df = pd.concat([self.df, df], axis=0)
+            else:
+                raise ValueError("Trying to 'overwrite' an ID without permission; "
+                                 " Or collision parameter not valid")
+        else:
+            # Append the ID to `self.df`.
+            df["ID"] = ID
+            df.set_index(["ID", "timestamp"], inplace=True)
+            self.df = pd.concat([self.df, df], axis=0)
+            self.add_metadata(IDs=ID, features=self.df.columns)  # add to metadata
 
     def add_feature(
         self, df: pd.DataFrame = None, ID: str = None, feature: str = None
     ) -> None:
         """Add feature to ID in datatype.
+
+        This method needs the overwrite permission because you overwrite an ID by
+        providing a feature, hence changing the length of the ID.
 
         If ID is not specify, add it to all datatype. If feature already present and
         not overwrite, gives a warning.  To use `add_feature`, you need overwrite
@@ -657,10 +653,23 @@ class TSloader:
         elif feature is None:
             raise ValueError("Need a feature.")
 
+        if self.permission != "overwrite":
+            raise ValueError("Trying to `add_feature` without 'overwrite' permission")
+
         if ID not in self.df.index:
             # ID not in self.df, use the `add_ID` method
             self.add_ID(df, ID)  # Metadata handled there
-        elif feature in self.df.columns:
+        elif feature not in self.df.columns:
+            # ID is in self.df and feature is not in self.df
+            # Overwrite ID row
+            feature_df = pd.DataFrame(df[["timestamp", feature]]).set_index(
+                ["timestamp"], drop=True
+            )
+            # Join features to re-create the DatFrame for ID
+            df_ID = self.df.loc[ID].join(feature_df, how="outer").reset_index()
+            # You need to overwrite the ID, to have same input length
+            self.add_ID(df_ID, ID)  # Metadata handled there
+        else:
             # ID and feature are in self.df
             if self.permission == "overwrite":
                 # You need to overwrite the ID, to have same input length
@@ -670,29 +679,12 @@ class TSloader:
                 # join features, keep the newest
                 df_ID = (
                     self.df.loc[ID]
-                    .join(feature_df, how="right", lsuffix="drop")
+                    .join(feature_df, how="outer", lsuffix="drop")
                     .drop(feature + "drop", axis=1)
                     .reset_index()
                 )
-
                 # You need to overwrite the ID, to have same input length
-                self.add_ID(df_ID, ID)  # Metadata handled there
-
-            else:
-                raise ValueError(
-                    f"{feature} already in DataFrame. "
-                    + "To force it, you can change the overwrite permission."
-                )
-        else:
-            # ID is in self.df but feature is not in self.df
-            # Overwrite ID row
-            feature_df = pd.DataFrame(df[["timestamp", feature]]).set_index(
-                ["timestamp"], drop=True
-            )
-            # join features to re-create the DatFrame for ID
-            df_ID = self.df.loc[ID].join(feature_df, how="outer").reset_index()
-            # You need to overwrite the ID, to have same input length
-            self.add_ID(df_ID, ID)  # Metadata handled there
+                self.add_ID(df_ID, ID, collision="overwrite")  # Metadata handled there
 
     ############################
     # remove data from dataype #
@@ -712,13 +704,13 @@ class TSloader:
 
         """
         if self.permission != "overwrite":
-            raise ValueError("To remove an ID, you need the overwrite permission.")
+            raise ValueError("To remove an ID, you need 'overwrite' permission.")
 
         elif ID not in self.df.index:
             raise ValueError("ID does not exsit and trying to remove it.")
 
         # update df
-        self.df.drop(ID, level=0, inplace=True)
+        self.df.drop(index=ID, level="ID", inplace=True)
         if rm_from_metadata:
             self.overwrite_metadata(IDs=list(self.df.index.droplevel(1).unique()))
 
@@ -736,12 +728,11 @@ class TSloader:
 
         """
         if self.permission != "overwrite":
-            raise ValueError("To remove a feature, you need the overwrite permission")
-
+            raise ValueError("To remove a feature, you need 'overwrite' permission")
         elif feature not in self.df.columns:
             raise ValueError("Trying to remove not existing feature.")
 
         # update df
-        self.df.drop(feature, axis=1, inplace=True)
+        self.df.drop(columns=feature, inplace=True)
         if rm_from_metadata:
             self.overwrite_metadata(features=list(self.df.columns.unique()))
