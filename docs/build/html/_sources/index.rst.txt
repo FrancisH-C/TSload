@@ -1,6 +1,15 @@
 Welcome to TSload's documentation!
 ==================================
 
+Dataloader and dataset manipulation for timeseries.
+
+Purpose
+-------
+
+Having a simple interface for simple and common timeseries manipulation.
+For example, adding/removing a timeseries, looping through multiple
+timeseries, parallel execution, data formatting, etc.
+
 Contents
 --------
 
@@ -8,6 +17,7 @@ Contents
    :maxdepth: 2
 
    Home <self>
+   quickstart
+   examples
+   more
    api
-
-.. include:: ../../README.rst
