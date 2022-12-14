@@ -4,9 +4,17 @@ Quickstart
 Installation
 ------------
 
-.. code:: shell
+#. Clone the package
 
-   python -m pip install -e .
+   .. code:: shell
+
+      git clone "https://github.com/FrancisH-C/TSload"
+
+#. Run the installation from the package root folder
+
+   .. code:: shell
+
+      python -m pip install -e .
 
 Basics
 ------

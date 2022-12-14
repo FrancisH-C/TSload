@@ -3,6 +3,8 @@ Welcome to TSload's documentation!
 
 Dataloader and dataset manipulation for timeseries.
 
+Package from https://github.com/FrancisH-C/TSload.
+
 Purpose
 -------
 
