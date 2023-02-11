@@ -13,7 +13,7 @@ def test_low_level():
 
     d = {
         "ID": np.hstack((["name1" for _ in range(5)], ["name2" for _ in range(5)])),
-        "dim": [0 for _ in range(10)],
+        "dim": ["0" for _ in range(10)],
         "timestamp": list(map(str, range(0, 10))),
         "feature0": list(range(10)),
         "feature1": list(range(10, 20)),
@@ -26,7 +26,7 @@ def test_low_level():
     d_ID = {
         "timestamp": list(map(str, range(0, 5))),
         "ID": [ID for _ in range(5)],
-        "dim": [0 for _ in range(5)],
+        "dim": ["0" for _ in range(5)],
         "feature0": list(range(5)),
         "feature1": list(range(10, 15)),
     }
@@ -38,7 +38,7 @@ def test_low_level():
     d_feature = {
         "timestamp": list(map(str, range(0, 4))),
         "ID": [ID for _ in range(4)],
-        "dim": [0 for _ in range(4)],
+        "dim": ["0" for _ in range(4)],
         feature: list(range(10, 14)),
     }
     df_feature = pd.DataFrame(data=d_feature)
@@ -48,14 +48,12 @@ def test_low_level():
     d_feature = {
         "timestamp": list(map(str, range(0, 6))),
         "ID": [ID for _ in range(6)],
-        "dim": [0 for _ in range(6)],
+        "dim": ["0" for _ in range(6)],
         feature: list(range(10, 16)),
     }
     df_feature = pd.DataFrame(data=d_feature)
 
     loader.add_feature(df_feature, ID=ID, feature=feature)
 
+    print(loader.df)
     loader.write()
-
-
-test_low_level()

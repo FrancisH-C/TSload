@@ -83,7 +83,6 @@ def test_permission():
         loader.rm_ID(ID)
     with pytest.raises(ValueError):
         loader.rm_feature(feature)
-
     with pytest.raises(ValueError):
         loader.initialize_datatype(pd.DataFrame(columns=["ID", "timestamp"]))
 
