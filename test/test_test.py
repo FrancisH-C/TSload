@@ -55,8 +55,4 @@ def test_low_level():
 
     loader.add_feature(df_feature, ID=ID, feature=feature)
 
-    print(loader.df)
     loader.write()
-
-
-

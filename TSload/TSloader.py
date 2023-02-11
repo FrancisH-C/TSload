@@ -286,7 +286,7 @@ class TSloader:
     def update_metadata(self) -> None:
         """Verify if entry is already there before append."""
         IDs = list(set(self.df["ID"]))
-        features = self.df.columns.drop(["ID", "timestamp", "dim"])
+        features = list(self.df.columns.drop(["ID", "timestamp", "dim"]))
 
         self.metadata.at[self.datatype, "IDs"] = IDs
         self.metadata.at[self.datatype, "features"] = features

@@ -44,7 +44,6 @@ def df_to_TSdf(df, ID=None, timestamp=None, dim_label=None):
 
 def np_to_TSdf(arr, df=None, ID=None, timestamp=None, dim_label=None, feature="0"):
     """Convert a numpy array to pandas DataFrame."""
-
     # df
     if df is None:
         df = pd.DataFrame()
