@@ -39,7 +39,7 @@ extensions = [
     "sphinx_automodapi.automodapi",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "nbsphinx"
+    "nbsphinx",
 ]
 
 autodoc_default_options = {"autosummary_imported_members": True}

@@ -14,12 +14,14 @@ try:
 except FileNotFoundError:
     LONG_DESCRIPTION = ""
 
-install_requires = ['pandas',
-                    'pyarrow',
-                    'sphinx',
-                    'nbsphinx',
-                    'sphinx-automodapi',
-                    'furo']
+install_requires = [
+    "pandas",
+    "pyarrow",
+    "sphinx",
+    "nbsphinx",
+    "sphinx-automodapi",
+    "furo",
+]
 extras_require = {}
 
 setup(
