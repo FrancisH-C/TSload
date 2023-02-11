@@ -10,6 +10,7 @@ def df_to_TSdf(df, ID=None, timestamp=None, dim_label=None):
 
     """
     # dim
+    df = df.copy()
     if "dim" in df.columns:
         dim_label = set(df["dim"])
     else:
@@ -47,6 +48,8 @@ def np_to_TSdf(arr, df=None, ID=None, timestamp=None, dim_label=None, feature="0
     # df
     if df is None:
         df = pd.DataFrame()
+    else:
+        df = df.copy()
 
     # ID
     if ID is None:

@@ -585,9 +585,9 @@ class TSloader:
                 "To initialize a non-empty datatype, you need 'overwrite' permission."
             )
 
-        self.df = pd.DataFrame.copy(df_to_TSdf(df))
+        self.df = df_to_TSdf(df)
 
-        self.update_metadata()
+        #self.update_metadata()
 
     def rm_datatype(self, rm_from_metadata: bool = True) -> None:
         """Remove datatatype's data.
