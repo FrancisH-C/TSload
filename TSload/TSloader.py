@@ -1,14 +1,18 @@
 """Tsloader module."""
-
 import pandas as pd
 import numpy as np
 import os
 import shutil
 import logging
+import multiprocessing
+from typing import Callable
+from TSload.DataFormat import np_to_TSdf, dict_to_TSdf, df_to_TSdf
 
 
 class TSloader:
     """Use to write, load and modify a timeseries dataset.
+
+    UPDATE : Create a class datatype. This would simplify TSloader and its uses
 
     A TSloader is assigned a path to a "dataset". Optionally, it can have a
     "datatype" which informs about the structure of the data. "Datatype" is a
@@ -253,10 +257,13 @@ class TSloader:
         """Add the current datatype to the metadata indices."""
         if self.metadata.empty:
             self.metadata = pd.DataFrame({"datatype": [self.datatype]})
-            self.metadata.set_index(["datatype"], inplace=True)
+            self.metadata.set_index(["datatype"], inplace=True, drop=False)
+            self.metadata["IDs"] = [[]]
+            self.metadata["features"] = [[]]
         elif self.datatype not in self.metadata.index:
             datatype = self.metadata.index.append(pd.Index([self.datatype]))
             self.metadata = self.metadata.reindex(datatype, fill_value=[])
+            self.metadata["datatype"] = datatype
         # else datatype is already in metadata indices
 
     def add_metadata(self, **metadata: list[str]) -> None:
@@ -270,10 +277,19 @@ class TSloader:
             if key not in self.metadata.columns:
                 self.metadata[key] = ""
                 self.metadata.at[self.datatype, key] = metadata[key]
+
             updated_metadata = list(
                 set(np.append(self.metadata.at[self.datatype, key], [metadata[key]]))
             )
             self.metadata.at[self.datatype, key] = updated_metadata
+
+    def update_metadata(self) -> None:
+        """Verify if entry is already there before append."""
+        IDs = list(set(self.df["ID"]))
+        features = self.df.columns.drop(["ID", "timestamp", "dim"])
+
+        self.metadata.at[self.datatype, "IDs"] = IDs
+        self.metadata.at[self.datatype, "features"] = features
 
     def overwrite_metadata(self, **metadata: list[str]) -> None:
         """Overwrite metadata.
@@ -336,10 +352,9 @@ class TSloader:
                 attribute is `True`.
 
         """
-        if (self.permission == "read" and write):
+        if self.permission == "read" and write:
             raise ValueError(
-                "You cannot write metadata while merging "
-                + "with 'read' permission."
+                "You cannot write metadata while merging " + "with 'read' permission."
             )
         elif self.permission != "overwrite" and rm:
             raise ValueError(
@@ -382,6 +397,46 @@ class TSloader:
     #######################
     # datatype operations #
     #######################
+
+    def get_df(self, IDs=None, timestamps=None, dims=None, drop=True):
+        """Get DataFrame for the datetype.
+
+        If "IDs", "timestamps" or "dims" is specify, fix that value. Otherwise
+        returns the entries corrresponding to all values. The more efficient in
+        memory is to have, at most, one specific fix value.
+
+        """
+        df = pd.DataFrame.copy(self.df)
+        if df.empty:
+            return df
+
+        # Return entries for fixed value or all values.
+        if IDs is not None:
+            if timestamps is not None:
+                if dims is not None:
+                    df = df.loc[IDs, timestamps, dims]
+                else:  # dims is None
+                    df.set_index(["ID"], inplace=True, drop=False)
+                    df = (
+                        df.loc[IDs].set_index(["timestamp"], drop=False).loc[timestamps]
+                    )
+            else:  # timestamps is None
+                if dims is not None:
+                    df.set_index(["ID"], inplace=True, drop=False)
+                    df = df.loc[IDs].set_index(["dim"], drop=False).loc[dims]
+                else:  # dims is None
+                    df = df.loc[IDs]
+        else:  # IDs is None
+            if timestamps is not None:
+                if dims is not None:
+                    df.set_index(["timestamp"], inplace=True, drop=False)
+                    df = df.loc[timestamps].set_index(["dim"], drop=False).loc[dims]
+                else:  # dims is None
+                    df.set_index(["timestamp"], inplace=True, drop=False)
+                    df = df.loc[timestamps]
+
+            df.set_index(["ID", "timestamp", "dim"], inplace=True, drop=drop)
+        return df
 
     def set_datatype(
         self,
@@ -530,10 +585,9 @@ class TSloader:
                 "To initialize a non-empty datatype, you need 'overwrite' permission."
             )
 
-        self.df = df.set_index(["ID", "timestamp"])
+        self.df = pd.DataFrame.copy(df_to_TSdf(df))
 
-        self.overwrite_metadata(IDs=list(self.df.index.droplevel(1).unique()))
-        self.overwrite_metadata(features=list(self.df.columns.unique()))
+        self.update_metadata()
 
     def rm_datatype(self, rm_from_metadata: bool = True) -> None:
         """Remove datatatype's data.
@@ -561,9 +615,21 @@ class TSloader:
     #######################
 
     def add_ID(
-        self, df: pd.DataFrame = None, ID: str = None, collision: str = "overwrite"
+        self,
+        data=None,
+        ID: str = None,
+        dim_label: np.ndarray = None,
+        timestamp: np.ndarray = None,
+        collision: str = "overwrite",
     ) -> None:
         """Add ID to datatype.
+
+        Caution, it Changes df. `df`'s columns could include "ID", "timestamp",
+        "dim". If they don't have either, one will be provided for them.
+
+
+
+        If no dim_label is given, assumes the number of dependent dimension is 1.
 
         Args:
             df (pd.DataFrame): A dataframe with data for a given `ID`.
@@ -573,60 +639,62 @@ class TSloader:
 
                 - 'overwrite' (default) : Overwrite the value.
                 - 'update' : Updates the value.
-                - 'append' : Append without index verification df
-                   (could lead to multiple index problem).
                 - 'ignore' : Does nothing.
+                - 'append' : Append without index verification df
+                   Dangerous: could lead to multiple timestamp problem.
 
         Raises:
-            ValueError: If `ID` or `df` are not well-defined or if trying to
+            ValueError: If `ID` is not well-defined or if trying to
                 overwrite data without the permisison.
 
         """
-        if df is None or "timestamp" not in df.columns:
-            raise ValueError("Need a well-defined DataFrame.")
-        elif ID is None:
-            raise ValueError("Need an ID.")
-        if collision == "ignore":
-            return
+        # format the data depending of the type
+        if type(data) is pd.DataFrame:
+            df = df_to_TSdf(data, ID=ID, timestamp=timestamp, dim_label=dim_label)
+        elif type(data) is np.ndarray:
+            df = np_to_TSdf(data, ID=ID, timestamp=timestamp, dim_label=dim_label)
+        elif type(data) is dict:
+            df = dict_to_TSdf(data, ID=ID, timestamp=timestamp, dim_label=dim_label)
+        else:
+            raise ValueError("Data is of the wrong type")
+
+        # ID
+        if ID is None:
+            if "ID" in df.columns:
+                ID = df["ID"][0]
+            else:
+                raise ValueError("Need an ID.")
 
         if ID in self.df.index:
             if collision == "ignore":
                 return
             elif collision == "append":
                 # append all the info for the ID
-                df = pd.concat([self.df.loc[ID].reset_index(), df], axis=0)
-
-                df["ID"] = ID
-                df.set_index(["ID", "timestamp"], inplace=True)
+                df = pd.concat([self.df.loc[ID], df], axis=0)
 
                 # remove previous now duplicated data
                 self.df.drop(index=ID, level="ID", inplace=True)
                 self.df = pd.concat([self.df, df], axis=0)
 
-            elif collision == 'update' and self.permission == "overwrite":
-                df["ID"] = ID
-                df.set_index(["ID", "timestamp"], inplace=True)
-
+            elif collision == "update" and self.permission == "overwrite":
                 self.df = df.combine_first(self.df)
-            elif collision == 'overwrite' and self.permission == "overwrite":
+            elif collision == "overwrite" and self.permission == "overwrite":
                 self.rm_ID(ID, rm_from_metadata=False)  # Keep metadata
-                df["ID"] = ID
-                df.set_index(["ID", "timestamp"], inplace=True)
                 self.df = pd.concat([self.df, df], axis=0)
             else:
-                raise ValueError("Trying to 'overwrite' an ID without permission; "
-                                 " Or collision parameter not valid")
+                raise ValueError(
+                    "Trying to 'overwrite' an ID without permission; "
+                    " Or collision parameter not valid"
+                )
         else:
             # Append the ID to `self.df`.
-            df["ID"] = ID
-            df.set_index(["ID", "timestamp"], inplace=True)
             self.df = pd.concat([self.df, df], axis=0)
-            self.add_metadata(IDs=ID, features=self.df.columns)  # add to metadata
+            self.update_metadata()  # add to metadata
 
     def add_feature(
         self, df: pd.DataFrame = None, ID: str = None, feature: str = None
     ) -> None:
-        """Add feature to ID in datatype.
+        """Add feature to ID in datatype, merging on 'timestamp'.
 
         This method needs the overwrite permission because you overwrite an ID by
         providing a feature, hence changing the length of the ID.
@@ -662,29 +730,16 @@ class TSloader:
         elif feature not in self.df.columns:
             # ID is in self.df and feature is not in self.df
             # Overwrite ID row
-            feature_df = pd.DataFrame(df[["timestamp", feature]]).set_index(
-                ["timestamp"], drop=True
-            )
-            # Join features to re-create the DatFrame for ID
-            df_ID = self.df.loc[ID].join(feature_df, how="outer").reset_index()
-            # You need to overwrite the ID, to have same input length
-            self.add_ID(df_ID, ID)  # Metadata handled there
+            current_ID = self.df.loc[ID].reset_index(drop=True)
+            df_ID = df.combine_first(current_ID)
+            self.add_ID(df_ID, ID, collision="overwrite")  # Metadata handled there
         else:
             # ID and feature are in self.df
-            if self.permission == "overwrite":
-                # You need to overwrite the ID, to have same input length
-                feature_df = pd.DataFrame(df[["timestamp", feature]]).set_index(
-                    ["timestamp"], drop=True
-                )
-                # join features, keep the newest
-                df_ID = (
-                    self.df.loc[ID]
-                    .join(feature_df, how="outer", lsuffix="drop")
-                    .drop(feature + "drop", axis=1)
-                    .reset_index()
-                )
-                # You need to overwrite the ID, to have same input length
-                self.add_ID(df_ID, ID, collision="overwrite")  # Metadata handled there
+            current_ID = self.df.loc[ID].reset_index(drop=True)
+            df.reset_index(inplace=True, drop=True)
+            df_ID = df.combine_first(current_ID)
+            # You need to overwrite the ID, to have same input length
+            self.add_ID(df_ID, ID, collision="overwrite")  # Metadata handled there
 
     ############################
     # remove data from dataype #
@@ -736,3 +791,38 @@ class TSloader:
         self.df.drop(columns=feature, inplace=True)
         if rm_from_metadata:
             self.overwrite_metadata(features=list(self.df.columns.unique()))
+
+
+class LoadersProcess(multiprocessing.Process):
+    """A collection of loaders and a function to apply to them using multiprocessing.
+
+    Args:
+        loaders (TSLoader): Sets attribute of the same name.
+        function Callable[[TSloader], None]): Sets attribute of the same name.
+
+    Attributes:
+        loaders ("TSLoader"): List of loaders to use with their split for
+            multiprocessing.
+        function Callable[["TSloader"], None]): A function to apply to every split of
+            every loaders.
+
+    """
+
+    def __init__(self, loaders: "TSloader", function: Callable[["TSloader"], None]):
+        """Init method."""
+        super(LoadersProcess, self).__init__()
+        self.loaders = loaders
+        self.function = function
+
+    def run(self):
+        """Multiprocessing run function.
+
+        For every loaders, load their split and apply the function from attribute
+        `function`.
+
+        """
+        for loader in self.loaders:
+            loader.reset_split_index()
+            for split in loader.split:
+                self.function(loader)
+                loader.next_split_index()

@@ -1,145 +1,88 @@
-"""DataFormat module.
-
-These are example of how to format data.
-
-"""
-from TSload.TSloader import TSloader
-import os
+"""Example of data format to a TimeSeries DataFrame."""
 import pandas as pd
-from typing import Callable
-import shutil
-import multiprocessing
+import numpy as np
 
 
-class LoadersProcess(multiprocessing.Process):
-    """A collection of loaders and a function to apply to them using multiprocessing.
+def df_to_TSdf(df, ID=None, timestamp=None, dim_label=None):
+    """Convert a pandas DataFrame into a TimeSeries DataFrame.
 
-    Args:
-        loaders (TSLoader): Sets attribute of the same name.
-        function Callable[[TSloader], None]): Sets attribute of the same name.
-
-    Attributes:
-        loaders ("TSLoader"): List of loaders to use with their split for
-            multiprocessing.
-        function Callable[["TSloader"], None]): A function to apply to every split of
-            every loaders.
+    Keeps data already in DataFrame
 
     """
+    # dim
+    if "dim" in df.columns:
+        dim_label = set(df["dim"])
+    else:
+        if dim_label is None:
+            dim_label = ["0"]
+        T = df.shape[0] // len(dim_label)
+        dim = np.array([dim_label for _ in range(T)]).flatten()
+        df["dim"] = dim
 
-    def __init__(self, loaders: "TSloader", function: Callable[["TSloader"], None]):
-        """Init method."""
-        super(LoadersProcess, self).__init__()
-        self.loaders = loaders
-        self.function = function
+    # timestamp
+    if "timestamp" not in df.columns:
+        if timestamp is None:
+            T = df.shape[0] // len(dim_label)
+            timestamp = list(map(str, range(0, T)))
 
-    def run(self):
-        """Multiprocessing run function.
+        timestamp = np.transpose(
+            np.array([timestamp for _ in range(len(dim_label))])
+        ).flatten()
+        df["timestamp"] = timestamp
 
-        For every loaders, load their split and apply the function from attribute
-        `function`.
+    # ID
+    if ID is not None:
+        df["ID"] = ID
+    elif "ID" not in df.columns:
+        raise ValueError("Need an ID.")
 
-        """
-        for loader in self.loaders:
-            loader.reset_split_index()
-            for split in loader.split:
-                self.function(loader)
-                loader.next_split_index()
+    df.set_index(["ID", "timestamp", "dim"], inplace=True, drop=False)
 
-
-def csv2pqt(
-    path: str,
-    filename: str,
-    process_function: Callable[[pd.DataFrame], None] = None,
-    **loader_args: any
-) -> None:
-    """Format a file from csv to pqt.
-
-    Args:
-        path (str): Path of the file.
-        filename (str): Name of the file.
-        process_function (Callable[[pd.DataFrame]) : None] ) : Default is  None.
-            A function to processs the data
-        **loader_args (any): Keyword arguments for the loader.
-
-    """
-    datatype, ext = os.path.splitext(filename)
-    if ext != ".csv":
-        raise ValueError("`Filename` should be a csv file")
-
-    loader = TSloader(path, datatype, **loader_args)
-    df = pd.read_csv(os.path.join(path, filename))
-
-    # process the data
-    if process_function is not None:
-        process_function(df)
-
-    loader.add_datatype(df)
-    loader.write()
+    return df
 
 
-def dataset_csv2pqt(
-    path: str,
-    process_function: Callable[[pd.DataFrame], None] = None,
-    **loader_args: any
-) -> None:
-    """Format files in path from csv to pqt.
+def np_to_TSdf(arr, df=None, ID=None, timestamp=None, dim_label=None, feature="0"):
+    """Convert a numpy array to pandas DataFrame."""
 
-    Args:
-        path (str): Path of the file.
-        filename (str): Name of the file.
-        process_function (Callable[[pd.DataFrame]) : None] ) : Default is  None.
-            A function to processs the data
-        **loader_args (any): Keyword arguments for the loader.
+    # df
+    if df is None:
+        df = pd.DataFrame()
 
-    """
-    for filename in os.listdir(path):
-        _, ext = os.path.splitext(filename)
-        if ext == ".csv":
-            csv2pqt(path, filename, **loader_args)
+    # ID
+    if ID is None:
+        raise ValueError("Need an ID.")
+
+    # dim
+    if dim_label is None:
+        dim_label = ["0"]
+
+    # Insert Feature into the DataFrame
+    if arr.ndim == 3:
+        for i in range(len(dim_label)):
+            df[feature + dim_label[i]] = arr[:, :, i].flatten()
+    elif arr.ndim == 2:
+        df[feature] = arr.flatten()
+    elif arr.ndim == 1:
+        df[feature] = arr
+    else:
+        raise ValueError("Need a well-defined numpy array.")
+
+    # Convert DataFrame to TimeSeries format
+    df = df_to_TSdf(df, ID=ID, timestamp=timestamp, dim_label=dim_label)
+
+    return df
 
 
-def merge_dataset(
-    loaders: "TSloader", merge_path: str, **merge_loader_args: any
-) -> "TSloader":
-    """Merge dataset assuming no shared dataype.
-
-    The merge path needs to be distinct from the path of all loaders.
-
-    Args:
-        loaders (TSloader): List of loaders to merge data on.
-        merge_path (str): List of loaders to merge data on.
-        **merge_loader_args (any): Arguments for the outputed TSloader's constructor
-
-    Returns:
-        "TSloader": TSloader instance with the metadata attribute merged.
-
-    Raises:
-        ValueError: If `merge_path` is one of `loaders` path.
-
-    """
-    if type(loaders) is not list:
-        raise ValueError("Give a list of the loaders to merge")
-
-    merge_loader = TSloader(
-        merge_path, loaders[0].datatype, permission="overwrite", **merge_loader_args
-    )
-
-    i = 0
-    for loader in loaders:
-        if loader.path == merge_path:
-            raise ValueError(
-                "The merge path needs to be distinct " + "from the path of all loaders."
-            )
-        for filename in os.listdir(loader.path):
-            if filename == "metadata.pqt":
-                src = os.path.join(loader.path, filename)
-                dst = os.path.join(merge_path, "metadata-" + str(i) + ".pqt")
-                shutil.copyfile(src, dst)
-                i += 1
-            else:
-                src = os.path.join(loader.path, filename)
-                dst = os.path.join(merge_path, filename)
-                shutil.copyfile(src, dst)
-
-    merge_loader.merge_metadata(write=True, rm=True)
-    return merge_loader
+def dict_to_TSdf(results, ID=None, timestamp=None, dim_label=None):
+    """Convert a dict to pandas DataFrame."""
+    df = pd.DataFrame()
+    for feature in results:
+        df = np_to_TSdf(
+            results[feature],
+            df,
+            ID=ID,
+            timestamp=timestamp,
+            dim_label=dim_label,
+            feature=feature,
+        )
+    return df
